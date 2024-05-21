@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.450">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Pranati">
+
+<title>Class 07: machine Learning 1</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="class07_files/libs/clipboard/clipboard.min.js"></script>
+<script src="class07_files/libs/quarto-html/quarto.js"></script>
+<script src="class07_files/libs/quarto-html/popper.min.js"></script>
+<script src="class07_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="class07_files/libs/quarto-html/anchor.min.js"></script>
+<link href="class07_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="class07_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="class07_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="class07_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="class07_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Class 07: machine Learning 1</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Pranati </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<p>Today we will start out multi-part exploration of some key machine learning methods. We will begin with clustering - finding groupings in data, and then dimensionallity reduction.</p>
+<section id="clustering" class="level2">
+<h2 class="anchored" data-anchor-id="clustering">Clustering</h2>
+<p>Let’s start with “k-means” clustering. The main function in base R for this <code>kmeans()</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Make up some data</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">hist</span>(<span class="fu">rnorm</span>(<span class="dv">100000</span>, <span class="at">mean=</span><span class="dv">3</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="class07_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fu">rnorm</span>(<span class="dv">30</span>, <span class="sc">-</span><span class="dv">3</span>), <span class="fu">rnorm</span> (<span class="dv">30</span>, <span class="sc">+</span><span class="dv">3</span>))</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="at">x=</span>tmp, <span class="at">y=</span><span class="fu">rev</span>(tmp))</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(x)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="class07_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Now let’s try out <code>kmeans()</code></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>km <span class="ot">&lt;-</span> <span class="fu">kmeans</span>(x, <span class="at">centers=</span><span class="dv">2</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>km</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>K-means clustering with 2 clusters of sizes 30, 30
+
+Cluster means:
+          x         y
+1  3.113181 -2.872927
+2 -2.872927  3.113181
+
+Clustering vector:
+ [1] 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1
+[39] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+
+Within cluster sum of squares by cluster:
+[1] 60.05063 60.05063
+ (between_SS / total_SS =  90.0 %)
+
+Available components:
+
+[1] "cluster"      "centers"      "totss"        "withinss"     "tot.withinss"
+[6] "betweenss"    "size"         "iter"         "ifault"      </code></pre>
+</div>
+</div>
+<blockquote class="blockquote">
+<p>Q. How many points in each cluster?</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>km<span class="sc">$</span>size</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 30 30</code></pre>
+</div>
+</div>
+<blockquote class="blockquote">
+<p>Q. What component of your result object details cluster assignment/membership?</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>km<span class="sc">$</span>cluster</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1
+[39] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1</code></pre>
+</div>
+</div>
+<blockquote class="blockquote">
+<p>Q. What are centers/mean values of each cluster?</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>km<span class="sc">$</span>centers</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          x         y
+1  3.113181 -2.872927
+2 -2.872927  3.113181</code></pre>
+</div>
+</div>
+<blockquote class="blockquote">
+<p>Q. Make a plot of your data showing your clustering results (groupings/clusters and cluster centers).</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(x, <span class="at">col =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="class07_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(x, <span class="at">col=</span>km<span class="sc">$</span>cluster)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">points</span>(km<span class="sc">$</span>centers, <span class="at">col=</span><span class="st">"green"</span>, <span class="at">pch=</span><span class="dv">15</span>, <span class="at">cex=</span><span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="class07_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<blockquote class="blockquote">
+<p>Q. Run <code>kmeans()</code> again and cluster in 4 groups and plot the results.</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>km4 <span class="ot">&lt;-</span> <span class="fu">kmeans</span>(x, <span class="at">centers=</span><span class="dv">4</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>km4</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>K-means clustering with 4 clusters of sizes 30, 8, 12, 10
+
+Cluster means:
+          x         y
+1 -2.872927  3.113181
+2  4.519471 -2.721938
+3  2.557723 -2.230214
+4  2.654699 -3.764973
+
+Clustering vector:
+ [1] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 3 4 3 4 4 3 2 3
+[39] 4 4 2 3 3 3 4 2 2 2 4 2 3 3 4 3 2 3 4 3 4 2
+
+Within cluster sum of squares by cluster:
+[1] 60.050630 12.843954  8.061291  4.422905
+ (between_SS / total_SS =  92.9 %)
+
+Available components:
+
+[1] "cluster"      "centers"      "totss"        "withinss"     "tot.withinss"
+[6] "betweenss"    "size"         "iter"         "ifault"      </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(x, <span class="at">col=</span>km4<span class="sc">$</span>cluster)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="class07_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="hierarchical-clustering" class="level2">
+<h2 class="anchored" data-anchor-id="hierarchical-clustering">Hierarchical Clustering</h2>
+<p>This form of clustering aims to reveal the structure in your data by progressivey grouping points into a ever smaller number of clusters.</p>
+<p>The main function in base R for this called <code>hclust()</code>. This function does not take our input data directly but wants a “distance matrix” that details how (dis)similar all our input points are to each other.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dist</span>(x)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>             1           2           3           4           5           6
+2   2.47471327                                                            
+3   2.02385719  1.61216609                                                
+4   1.62652328  0.84907241  1.34754588                                    
+5   0.93198427  1.69784586  1.13837256  0.91641451                        
+6   0.55057114  2.17055533  2.11065182  1.33948162  0.97866139            
+7   0.54502557  2.56710319  1.75190994  1.75717403  0.87293092  1.04360764
+8   2.59364047  1.20143243  0.77504991  1.39669415  1.66167580  2.53953091
+9   1.21017007  3.18462006  2.06723258  2.42002132  1.50450286  1.74978327
+10  0.91852374  2.04847275  1.14132485  1.30904515  0.40762371  1.17527994
+11  1.41755684  3.75281511  3.43232553  2.91853200  2.34739770  1.58228601
+12  1.79834939  0.77156183  1.64492015  0.31844943  1.19536002  1.42822007
+13  1.84592041  3.19232164  3.57069401  2.52402833  2.46071128  1.49267134
+14  3.62802795  4.69526791  5.32842049  4.17086212  4.24149966  3.28416114
+15  0.22989665  2.45098494  2.15415342  1.60394213  1.02802811  0.37114969
+16  1.36032352  1.12398066  1.21879466  0.30430867  0.61249065  1.14288379
+17  1.22271714  2.52132289  1.29015347  1.84017140  0.96345467  1.62610667
+18  1.78825370  2.14751953  0.62139808  1.68617287  1.09763676  2.03374365
+19  0.44289309  2.71698130  1.98364845  1.88777071  1.04552429  0.98968082
+20  0.74186177  3.20562832  2.69569257  2.35659405  1.65823076  1.11107180
+21  1.80498557  0.77578519  1.66292905  0.33584683  1.20910545  1.43043971
+22  1.03800914  1.46673229  1.59098915  0.62635550  0.64223154  0.71424527
+23  1.31354990  1.76206205  0.71434686  1.14428689  0.49193320  1.46011237
+24  0.78692060  3.26147147  2.68070735  2.41296237  1.67629566  1.20507036
+25  1.62252861  1.93892581  0.53187851  1.44011226  0.86577905  1.82263550
+26  0.97989924  1.49804068  1.37191858  0.65493488  0.39022819  0.79879085
+27  1.24106877  1.24554600  1.23022932  0.41992779  0.50469501  1.04444017
+28  0.91247056  3.25022694  2.39391079  2.42549511  1.56430849  1.45283898
+29  1.26392845  1.43877737  1.89746850  0.70370548  1.01396899  0.80332284
+30  2.03752636  3.14576433  1.63180023  2.58364323  1.78039529  2.47851687
+31  6.63360143  7.29117547  5.71286252  7.00409715  6.34836964  7.09807346
+32  9.38944126  9.80029819  8.28892386  9.62042083  9.03778999  9.83550286
+33  7.99848015  8.89457183  7.29530423  8.54593802  7.82807432  8.49727493
+34  8.77665708  9.13806861  7.63478707  8.96973935  8.40177192  9.21352689
+35  8.76390126  9.19694792  7.67636966  9.00487312  8.41542090  9.21041862
+36  7.61258470  7.98841128  6.47215963  7.80405060  7.23126970  8.04546634
+37  8.56100594  9.46208018  7.86405374  9.11622594  8.39759170  9.06214033
+38  7.95357053  8.36105870  6.84036839  8.16995064  7.58777635  8.39276705
+39  9.01855947  9.44880451  7.93053871  9.25971040  8.67118713  9.46575926
+40  9.37472589  9.61640351  8.14952028  9.49266123  8.96164609  9.79735766
+41  8.69051539  9.57445210  7.97847802  9.23504171  8.52086686  9.19028220
+42  8.21086466  8.96435910  7.38196631  8.66323382  7.98281605  8.69485096
+43  7.36256521  7.74524514  6.22502948  7.55577046  6.98078814  7.79487027
+44  7.49255290  8.10425664  6.53929458  7.84200931  7.20003634  7.95624682
+45  8.82450889  9.15389625  7.65911925  8.99656983  8.43835838  9.25715841
+46  8.85446380  9.54275993  7.97291279  9.26785708  8.60557308  9.33326813
+47 12.13493127 12.94684214 11.36862865 12.64908795 11.95526590 12.63482363
+48 10.43311290 11.16518639  9.59449541 10.88596943 10.21263616 10.92135683
+49  9.35685832  9.59850495  8.13150492  9.47463654  8.94362871  9.77941159
+50  9.27962456 10.26579024  8.66227080  9.89731048  9.15804438  9.79092926
+51  8.01560449  8.54583826  6.99937094  8.31525558  7.69694895  8.47150127
+52  7.47318032  8.31757792  6.72132657  7.98069684  7.27558381  7.96438521
+53  8.17042476  8.16161869  6.76380970  8.11103877  7.66102332  8.54898699
+54  8.08174953  8.78490133  7.20900183  8.49889323  7.83200116  8.55937610
+55  9.10347662  9.71345344  8.15823746  9.46594552  8.82553477  9.57383213
+56  8.37692590  8.83860005  7.30893057  8.63377297  8.03568360  8.82553477
+57  9.04151312  9.30576096  7.83009986  9.17186686  8.63377297  9.46594552
+58  7.74857707  7.95823644  6.48663842  7.83009986  7.30893057  8.15823746
+59  9.32073481  9.36300805  7.95823644  9.30576096  8.83860005  9.71345344
+60  8.62456715  9.32073481  7.74857707  9.04151312  8.37692590  9.10347662
+             7           8           9          10          11          12
+2                                                                         
+3                                                                         
+4                                                                         
+5                                                                         
+6                                                                         
+7                                                                         
+8   2.42637002                                                            
+9   0.73172225  2.82228253                                                
+10  0.62196725  1.80481204  1.13659256                                    
+11  1.74407178  4.00810649  1.96938578  2.30074099                        
+12  1.99870723  1.59669933  2.68614930  1.59808539  3.00444398            
+13  2.38712421  3.88946421  2.96066358  2.66105677  1.52660885  2.43973245
+14  4.16194181  5.56656101  4.67986637  4.45542009  2.90617849  4.01371965
+15  0.77430868  2.67628207  1.43194260  1.09048099  1.34284664  1.73843233
+16  1.45667961  1.43824055  2.11571944  1.00867232  2.69874413  0.59281938
+17  0.71310585  2.04985632  0.77745100  0.55839646  2.43192371  2.14011551
+18  1.38300550  1.39158531  1.52622209  0.87811078  3.12570743  2.00416195
+19  0.23880253  2.64389109  0.76876091  0.84606946  1.50734010  2.10572138
+20  0.97722424  3.31289853  1.25717545  1.55543916  0.77023352  2.50398868
+21  2.00953447  1.61222167  2.69845629  1.61233303  3.00540485  0.01803608
+22  1.28501336  1.88511433  2.00289691  1.02742208  2.29219904  0.76042425
+23  1.05398727  1.37738187  1.48754824  0.43335894  2.71825652  1.45983464
+24  0.93947581  3.31909158  1.14556398  1.53972625  0.84241380  2.57438539
+25  1.27151644  1.29768662  1.53556835  0.70427666  2.99630540  1.75846094
+26  1.12102883  1.74128856  1.81612569  0.78651047  2.32675876  0.87767847
+27  1.33766649  1.51152645  2.00324047  0.90758593  2.58878816  0.69094549
+28  0.69472670  3.10050653  0.58577212  1.30117518  1.38372222  2.64453137
+29  1.60061020  2.08559971  2.32948080  1.39691203  2.35335489  0.66822077
+30  1.49623412  2.38356574  1.11234359  1.39441784  3.06668171  2.89786006
+31  6.08884108  6.15172911  5.51137254  5.99302218  7.38003061  7.31935649
+32  8.84459245  8.61445770  8.28952739  8.70292779 10.16920459  9.92828815
+33  7.46159650  7.78273847  6.81975522  7.45103612  8.56200688  8.86392346
+34  8.23249538  7.95024468  7.69452635  8.07297847  9.59451070  9.27621605
+35  8.21904965  8.01506770  7.66495805  8.07908361  9.54827090  9.31369884
+36  7.06897731  6.80643337  6.54242715  6.90299187  8.45722063  8.11163648
+37  8.02522034  8.34649362  7.37867457  8.01984970  9.10364833  9.43419540
+38  7.40925568  7.18027776  6.87038470  7.25540811  8.77284015  8.47836039
+39  8.47367157  8.26576122  7.91770341  8.33479496  9.79782611  9.56834352
+40  8.83234654  8.41994959  8.31598188  8.64513815 10.23314667  9.79436112
+41  8.15411857  8.45467639  7.50978672  8.14431492  9.23926698  9.55286526
+42  7.66911167  7.82559465  7.05260651  7.61694292  8.84745023  8.97961358
+43  6.81906474  6.56523628  6.29476339  6.65229119  8.21245386  7.86373325
+44  6.94778578  6.94984056  6.36835203  6.84771884  8.22783010  8.15602880
+45  8.28079568  7.96364021  7.74971021  8.11296472  9.65595999  9.30189666
+46  8.31164237  8.38997124  7.70283646  8.24473735  9.50730504  9.58300484
+47 11.59879493 11.79845031 10.95178299 11.58257826 12.65149738 12.96578723
+48  9.89265368 10.01110991  9.26595193  9.84699015 11.02496830 11.20161321
+49  8.81449383  8.40207942  8.29831720  8.62715244 10.21568085  9.77634422
+50  8.74954435  9.16171824  8.08505557  8.77406482  9.75144179 10.21568085
+51  7.47058465  7.37750565  6.90291028  7.35181585  8.77406482  8.62715244
+52  6.93338924  7.20099371  6.30569761  6.90291028  8.08505557  8.29831720
+53  7.63923719  6.96021828  7.20099371  7.37750565  9.16171824  8.40207942
+54  7.53865342  7.63923719  6.93338924  7.47058465  8.74954435  8.81449383
+55  8.55937610  8.54898699  7.96438521  8.47150127  9.79092926  9.77941159
+56  7.83200116  7.66102332  7.27558381  7.69694895  9.15804438  8.94362871
+57  8.49889323  8.11103877  7.98069684  8.31525558  9.89731048  9.47463654
+58  7.20900183  6.76380970  6.72132657  6.99937094  8.66227080  8.13150492
+59  8.78490133  8.16161869  8.31757792  8.54583826 10.26579024  9.59850495
+60  8.08174953  8.17042476  7.47318032  8.01560449  9.27962456  9.35685832
+            13          14          15          16          17          18
+2                                                                         
+3                                                                         
+4                                                                         
+5                                                                         
+6                                                                         
+7                                                                         
+8                                                                         
+9                                                                         
+10                                                                        
+11                                                                        
+12                                                                        
+13                                                                        
+14  1.79469631                                                            
+15  1.62245264  3.40936526                                                
+16  2.45333153  4.15968037  1.36370098                                    
+17  3.06164912  4.84931840  1.44016716  1.54736057                        
+18  3.52613952  5.31756856  1.96818910  1.46244982  0.76587049            
+19  2.23007702  3.98721391  0.66324111  1.59506103  0.93480175  1.62140570
+20  1.79775845  3.44469080  0.76644174  2.09894983  1.66194400  2.36022437
+21  2.43146045  4.00136583  1.74292149  0.60800168  2.15511646  2.02174756
+22  2.01384412  3.74329779  0.98679132  0.44944488  1.58350404  1.70579683
+23  2.94870602  4.73236434  1.45629383  0.88381056  0.76406838  0.61603107
+24  1.93636258  3.57396721  0.84717741  2.14644696  1.59981801  2.31733392
+25  3.31447762  5.10168594  1.78707771  1.21206985  0.75831790  0.25070814
+26  2.20357516  3.95678217  0.98695559  0.38091621  1.34485675  1.45242543
+27  2.39250939  4.11713915  1.25045266  0.12157086  1.45422412  1.42104943
+28  2.46323976  4.13754871  1.08860545  2.13081925  1.17738442  1.93781523
+29  1.82039541  3.48537413  1.15138479  0.68475527  1.95093426  2.06465044
+30  3.88286887  5.65669314  2.26380298  2.31340212  0.85895304  1.01884821
+31  8.45995380 10.19035363  6.86313422  6.78842877  5.47856741  5.32616462
+32 11.22601616 12.96923038  9.61793572  9.43077888  8.20961670  7.97656434
+33  9.77632424 11.44335058  8.22766254  8.31109044  6.91175576  6.85977913
+34 10.61766298 12.37090061  9.00430936  8.78447053  7.58754166  7.33400029
+35 10.60054207 12.34450485  8.99240440  8.81257017  7.58461660  7.35676971
+36  9.45533827 11.21396676  7.83974836  7.61619194  6.41976202  6.16430807
+37 10.33274695 11.99089936  8.78996921  8.88140944  7.47966374  7.43006102
+38  9.79401259 11.54665473  8.18139102  7.97936713  6.76666655  6.52513540
+39 10.85469632 12.59742864  9.24712773  9.06789082  7.84001272  7.61231316
+40 11.21946461 12.98356156  9.60088296  9.31993203  8.17395498  7.88176492
+41 10.46484117 12.12543863  8.91959563  9.00175742  7.60525651  7.54889614
+42 10.01321701 11.70821729  8.44072170  8.44079133  7.08918514  6.98052178
+43  9.20557403 10.96511533  7.58964459  7.36693826  6.16920881  5.91444350
+44  9.31846260 11.04644384  7.72208131  7.63159073  6.33577440  6.16920881
+45 10.66694283 12.42378299  9.05174114  8.81452666  7.63159073  7.36693826
+46 10.66283856 12.36392192  9.08436045  9.05174114  7.72208131  7.58964459
+47 13.90348449 15.54790724 12.36392192 12.42378299 11.04644384 10.96511533
+48 12.22582198 13.90348449 10.66283856 10.66694283  9.31846260  9.20557403
+49 11.20161321 12.96578723  9.58300484  9.30189666  8.15602880  7.86373325
+50 11.02496830 12.65149738  9.50730504  9.65595999  8.22783010  8.21245386
+51  9.84699015 11.58257826  8.24473735  8.11296472  6.84771884  6.65229119
+52  9.26595193 10.95178299  7.70283646  7.74971021  6.36835203  6.29476339
+53 10.01110991 11.79845031  8.38997124  7.96364021  6.94984056  6.56523628
+54  9.89265368 11.59879493  8.31164237  8.28079568  6.94778578  6.81906474
+55 10.92135683 12.63482363  9.33326813  9.25715841  7.95624682  7.79487027
+56 10.21263616 11.95526590  8.60557308  8.43835838  7.20003634  6.98078814
+57 10.88596943 12.64908795  9.26785708  8.99656983  7.84200931  7.55577046
+58  9.59449541 11.36862865  7.97291279  7.65911925  6.53929458  6.22502948
+59 11.16518639 12.94684214  9.54275993  9.15389625  8.10425664  7.74524514
+60 10.43311290 12.13493127  8.85446380  8.82450889  7.49255290  7.36256521
+            19          20          21          22          23          24
+2                                                                         
+3                                                                         
+4                                                                         
+5                                                                         
+6                                                                         
+7                                                                         
+8                                                                         
+9                                                                         
+10                                                                        
+11                                                                        
+12                                                                        
+13                                                                        
+14                                                                        
+15                                                                        
+16                                                                        
+17                                                                        
+18                                                                        
+19                                                                        
+20  0.73913464                                                            
+21  2.11499201  2.50875855                                                
+22  1.36342408  1.74865533  0.76697774                                    
+23  1.27940987  1.98252002  1.47650640  1.09017033                        
+24  0.70152124  0.13926120  2.57997043  1.81527378  1.97128591            
+25  1.50917576  2.24039395  1.77593518  1.46054842  0.37557308  2.21068259
+26  1.23611842  1.71803471  0.88856716  0.25577076  0.83641884  1.76647434
+27  1.47380355  1.98070395  0.70494257  0.37867326  0.82425035  2.02664486
+28  0.53908663  0.69351723  2.65367716  1.89907784  1.72315720  0.57034039
+29  1.64422133  1.91130601  0.66576303  0.37186190  1.45149017  1.99837803
+30  1.67412224  2.32419892  2.91427644  2.41821256  1.43977736  2.22851042
+31  6.23049735  6.75070304  7.33722710  6.98913291  5.91960274  6.62588706
+32  8.99632474  9.53444247  9.94632066  9.67150738  8.58588597  9.41093725
+33  7.57329431  8.00788366  8.88152066  8.46969778  7.42998840  7.87498751
+34  8.39011531  8.94499772  9.29425199  9.03294003  7.94534151  8.82381500
+35  8.37089777  8.91070019  9.33172569  9.04988796  7.96513746  8.78754571
+36  7.22985498  7.79603367  8.12966982  7.86259473  6.77523954  7.67678711
+37  8.13433916  8.55972553  9.45179636  9.03910578  8.00024533  8.42611315
+38  7.56615970  8.12118288  8.49638979  8.22079496  7.13471990  8.00024533
+39  8.62492789  9.16258696  9.58637178  9.30562086  8.22079496  9.03910578
+40  8.99741325  9.57049589  9.81237796  9.58637178  8.49638979  9.45179636
+41  8.26456628  8.69315497  9.57049589  9.16258696  8.12118288  8.55972553
+42  7.79426295  8.26456628  8.99741325  8.62492789  7.56615970  8.13433916
+43  6.98052178  7.54889614  7.88176492  7.61231316  6.52513540  7.43006102
+44  7.08918514  7.60525651  8.17395498  7.84001272  6.76666655  7.47966374
+45  8.44079133  9.00175742  9.31993203  9.06789082  7.97936713  8.88140944
+46  8.44072170  8.91959563  9.60088296  9.24712773  8.18139102  8.78996921
+47 11.70821729 12.12543863 12.98356156 12.59742864 11.54665473 11.99089936
+48 10.01321701 10.46484117 11.21946461 10.85469632  9.79401259 10.33274695
+49  8.97961358  9.55286526  9.79436112  9.56834352  8.47836039  9.43419540
+50  8.84745023  9.23926698 10.23314667  9.79782611  8.77284015  9.10364833
+51  7.61694292  8.14431492  8.64513815  8.33479496  7.25540811  8.01984970
+52  7.05260651  7.50978672  8.31598188  7.91770341  6.87038470  7.37867457
+53  7.82559465  8.45467639  8.41994959  8.26576122  7.18027776  8.34649362
+54  7.66911167  8.15411857  8.83234654  8.47367157  7.40925568  8.02522034
+55  8.69485096  9.19028220  9.79735766  9.46575926  8.39276705  9.06214033
+56  7.98281605  8.52086686  8.96164609  8.67118713  7.58777635  8.39759170
+57  8.66323382  9.23504171  9.49266123  9.25971040  8.16995064  9.11622594
+58  7.38196631  7.97847802  8.14952028  7.93053871  6.84036839  7.86405374
+59  8.96435910  9.57445210  9.61640351  9.44880451  8.36105870  9.46208018
+60  8.21086466  8.69051539  9.37472589  9.01855947  7.95357053  8.56100594
+            25          26          27          28          29          30
+2                                                                         
+3                                                                         
+4                                                                         
+5                                                                         
+6                                                                         
+7                                                                         
+8                                                                         
+9                                                                         
+10                                                                        
+11                                                                        
+12                                                                        
+13                                                                        
+14                                                                        
+15                                                                        
+16                                                                        
+17                                                                        
+18                                                                        
+19                                                                        
+20                                                                        
+21                                                                        
+22                                                                        
+23                                                                        
+24                                                                        
+25                                                                        
+26  1.20870179                                                            
+27  1.17050431  0.26399611                                                
+28  1.88209136  1.77493773  2.00991150                                    
+29  1.81678304  0.62554416  0.66989353  2.16553799                        
+30  1.20710567  2.17023271  2.23772391  1.69121579  2.78932790            
+31  5.57637374  6.73399594  6.74190609  6.05732078  7.35933616  4.62088747
+32  8.22669573  9.41581207  9.39682476  8.84154419 10.03692018  7.35933616
+33  7.10646579  8.21797272  8.25360239  7.32130450  8.84154419  6.05732078
+34  7.58364578  8.77744322  8.75284018  8.25360239  9.39682476  6.74190609
+35  7.60707220  8.79415298  8.77744322  8.21797272  9.41581207  6.73399594
+36  6.41410123  7.60707220  7.58364578  7.10646579  8.22669573  5.57637374
+37  7.67678711  8.78754571  8.82381500  7.87498751  9.41093725  6.62588706
+38  6.77523954  7.96513746  7.94534151  7.42998840  8.58588597  5.91960274
+39  7.86259473  9.04988796  9.03294003  8.46969778  9.67150738  6.98913291
+40  8.12966982  9.33172569  9.29425199  8.88152066  9.94632066  7.33722710
+41  7.79603367  8.91070019  8.94499772  8.00788366  9.53444247  6.75070304
+42  7.22985498  8.37089777  8.39011531  7.57329431  8.99632474  6.23049735
+43  6.16430807  7.35676971  7.33400029  6.85977913  7.97656434  5.32616462
+44  6.41976202  7.58461660  7.58754166  6.91175576  8.20961670  5.47856741
+45  7.61619194  8.81257017  8.78447053  8.31109044  9.43077888  6.78842877
+46  7.83974836  8.99240440  9.00430936  8.22766254  9.61793572  6.86313422
+47 11.21396676 12.34450485 12.37090061 11.44335058 12.96923038 10.19035363
+48  9.45533827 10.60054207 10.61766298  9.77632424 11.22601616  8.45995380
+49  8.11163648  9.31369884  9.27621605  8.86392346  9.92828815  7.31935649
+50  8.45722063  9.54827090  9.59451070  8.56200688 10.16920459  7.38003061
+51  6.90299187  8.07908361  8.07297847  7.45103612  8.70292779  5.99302218
+52  6.54242715  7.66495805  7.69452635  6.81975522  8.28952739  5.51137254
+53  6.80643337  8.01506770  7.95024468  7.78273847  8.61445770  6.15172911
+54  7.06897731  8.21904965  8.23249538  7.46159650  8.84459245  6.08884108
+55  8.04546634  9.21041862  9.21352689  8.49727493  9.83550286  7.09807346
+56  7.23126970  8.41542090  8.40177192  7.82807432  9.03778999  6.34836964
+57  7.80405060  9.00487312  8.96973935  8.54593802  9.62042083  7.00409715
+58  6.47215963  7.67636966  7.63478707  7.29530423  8.28892386  5.71286252
+59  7.98841128  9.19694792  9.13806861  8.89457183  9.80029819  7.29117547
+60  7.61258470  8.76390126  8.77665708  7.99848015  9.38944126  6.63360143
+            31          32          33          34          35          36
+2                                                                         
+3                                                                         
+4                                                                         
+5                                                                         
+6                                                                         
+7                                                                         
+8                                                                         
+9                                                                         
+10                                                                        
+11                                                                        
+12                                                                        
+13                                                                        
+14                                                                        
+15                                                                        
+16                                                                        
+17                                                                        
+18                                                                        
+19                                                                        
+20                                                                        
+21                                                                        
+22                                                                        
+23                                                                        
+24                                                                        
+25                                                                        
+26                                                                        
+27                                                                        
+28                                                                        
+29                                                                        
+30                                                                        
+31                                                                        
+32  2.78932790                                                            
+33  1.69121579  2.16553799                                                
+34  2.23772391  0.66989353  2.00991150                                    
+35  2.17023271  0.62554416  1.77493773  0.26399611                        
+36  1.20710567  1.81678304  1.88209136  1.17050431  1.20870179            
+37  2.22851042  1.99837803  0.57034039  2.02664486  1.76647434  2.21068259
+38  1.43977736  1.45149017  1.72315720  0.82425035  0.83641884  0.37557308
+39  2.41821256  0.37186190  1.89907784  0.37867326  0.25577076  1.46054842
+40  2.91427644  0.66576303  2.65367716  0.70494257  0.88856716  1.77593518
+41  2.32419892  1.91130601  0.69351723  1.98070395  1.71803471  2.24039395
+42  1.67412224  1.64422133  0.53908663  1.47380355  1.23611842  1.50917576
+43  1.01884821  2.06465044  1.93781523  1.42104943  1.45242543  0.25070814
+44  0.85895304  1.95093426  1.17738442  1.45422412  1.34485675  0.75831790
+45  2.31340212  0.68475527  2.13081925  0.12157086  0.38091621  1.21206985
+46  2.26380298  1.15138479  1.08860545  1.25045266  0.98695559  1.78707771
+47  5.65669314  3.48537413  4.13754871  4.11713915  3.95678217  5.10168594
+48  3.88286887  1.82039541  2.46323976  2.39250939  2.20357516  3.31447762
+49  2.89786006  0.66822077  2.64453137  0.69094549  0.87767847  1.75846094
+50  3.06668171  2.35335489  1.38372222  2.58878816  2.32675876  2.99630540
+51  1.39441784  1.39691203  1.30117518  0.90758593  0.78651047  0.70427666
+52  1.11234359  2.32948080  0.58577212  2.00324047  1.81612569  1.53556835
+53  2.38356574  2.08559971  3.10050653  1.51152645  1.74128856  1.29768662
+54  1.49623412  1.60061020  0.69472670  1.33766649  1.12102883  1.27151644
+55  2.47851687  0.80332284  1.45283898  1.04444017  0.79879085  1.82263550
+56  1.78039529  1.01396899  1.56430849  0.50469501  0.39022819  0.86577905
+57  2.58364323  0.70370548  2.42549511  0.41992779  0.65493488  1.44011226
+58  1.63180023  1.89746850  2.39391079  1.23022932  1.37191858  0.53187851
+59  3.14576433  1.43877737  3.25022694  1.24554600  1.49804068  1.93892581
+60  2.03752636  1.26392845  0.91247056  1.24106877  0.97989924  1.62252861
+            37          38          39          40          41          42
+2                                                                         
+3                                                                         
+4                                                                         
+5                                                                         
+6                                                                         
+7                                                                         
+8                                                                         
+9                                                                         
+10                                                                        
+11                                                                        
+12                                                                        
+13                                                                        
+14                                                                        
+15                                                                        
+16                                                                        
+17                                                                        
+18                                                                        
+19                                                                        
+20                                                                        
+21                                                                        
+22                                                                        
+23                                                                        
+24                                                                        
+25                                                                        
+26                                                                        
+27                                                                        
+28                                                                        
+29                                                                        
+30                                                                        
+31                                                                        
+32                                                                        
+33                                                                        
+34                                                                        
+35                                                                        
+36                                                                        
+37                                                                        
+38  1.97128591                                                            
+39  1.81527378  1.09017033                                                
+40  2.57997043  1.47650640  0.76697774                                    
+41  0.13926120  1.98252002  1.74865533  2.50875855                        
+42  0.70152124  1.27940987  1.36342408  2.11499201  0.73913464            
+43  2.31733392  0.61603107  1.70579683  2.02174756  2.36022437  1.62140570
+44  1.59981801  0.76406838  1.58350404  2.15511646  1.66194400  0.93480175
+45  2.14644696  0.88381056  0.44944488  0.60800168  2.09894983  1.59506103
+46  0.84717741  1.45629383  0.98679132  1.74292149  0.76644174  0.66324111
+47  3.57396721  4.73236434  3.74329779  4.00136583  3.44469080  3.98721391
+48  1.93636258  2.94870602  2.01384412  2.43146045  1.79775845  2.23007702
+49  2.57438539  1.45983464  0.76042425  0.01803608  2.50398868  2.10572138
+50  0.84241380  2.71825652  2.29219904  3.00540485  0.77023352  1.50734010
+51  1.53972625  0.43335894  1.02742208  1.61233303  1.55543916  0.84606946
+52  1.14556398  1.48754824  2.00289691  2.69845629  1.25717545  0.76876091
+53  3.31909158  1.37738187  1.88511433  1.61222167  3.31289853  2.64389109
+54  0.93947581  1.05398727  1.28501336  2.00953447  0.97722424  0.23880253
+55  1.20507036  1.46011237  0.71424527  1.43043971  1.11107180  0.98968082
+56  1.67629566  0.49193320  0.64223154  1.20910545  1.65823076  1.04552429
+57  2.41296237  1.14428689  0.62635550  0.33584683  2.35659405  1.88777071
+58  2.68070735  0.71434686  1.59098915  1.66292905  2.69569257  1.98364845
+59  3.26147147  1.76206205  1.46673229  0.77578519  3.20562832  2.71698130
+60  0.78692060  1.31354990  1.03800914  1.80498557  0.74186177  0.44289309
+            43          44          45          46          47          48
+2                                                                         
+3                                                                         
+4                                                                         
+5                                                                         
+6                                                                         
+7                                                                         
+8                                                                         
+9                                                                         
+10                                                                        
+11                                                                        
+12                                                                        
+13                                                                        
+14                                                                        
+15                                                                        
+16                                                                        
+17                                                                        
+18                                                                        
+19                                                                        
+20                                                                        
+21                                                                        
+22                                                                        
+23                                                                        
+24                                                                        
+25                                                                        
+26                                                                        
+27                                                                        
+28                                                                        
+29                                                                        
+30                                                                        
+31                                                                        
+32                                                                        
+33                                                                        
+34                                                                        
+35                                                                        
+36                                                                        
+37                                                                        
+38                                                                        
+39                                                                        
+40                                                                        
+41                                                                        
+42                                                                        
+43                                                                        
+44  0.76587049                                                            
+45  1.46244982  1.54736057                                                
+46  1.96818910  1.44016716  1.36370098                                    
+47  5.31756856  4.84931840  4.15968037  3.40936526                        
+48  3.52613952  3.06164912  2.45333153  1.62245264  1.79469631            
+49  2.00416195  2.14011551  0.59281938  1.73843233  4.01371965  2.43973245
+50  3.12570743  2.43192371  2.69874413  1.34284664  2.90617849  1.52660885
+51  0.87811078  0.55839646  1.00867232  1.09048099  4.45542009  2.66105677
+52  1.52622209  0.77745100  2.11571944  1.43194260  4.67986637  2.96066358
+53  1.39158531  2.04985632  1.43824055  2.67628207  5.56656101  3.88946421
+54  1.38300550  0.71310585  1.45667961  0.77430868  4.16194181  2.38712421
+55  2.03374365  1.62610667  1.14288379  0.37114969  3.28416114  1.49267134
+56  1.09763676  0.96345467  0.61249065  1.02802811  4.24149966  2.46071128
+57  1.68617287  1.84017140  0.30430867  1.60394213  4.17086212  2.52402833
+58  0.62139808  1.29015347  1.21879466  2.15415342  5.32842049  3.57069401
+59  2.14751953  2.52132289  1.12398066  2.45098494  4.69526791  3.19232164
+60  1.78825370  1.22271714  1.36032352  0.22989665  3.62802795  1.84592041
+            49          50          51          52          53          54
+2                                                                         
+3                                                                         
+4                                                                         
+5                                                                         
+6                                                                         
+7                                                                         
+8                                                                         
+9                                                                         
+10                                                                        
+11                                                                        
+12                                                                        
+13                                                                        
+14                                                                        
+15                                                                        
+16                                                                        
+17                                                                        
+18                                                                        
+19                                                                        
+20                                                                        
+21                                                                        
+22                                                                        
+23                                                                        
+24                                                                        
+25                                                                        
+26                                                                        
+27                                                                        
+28                                                                        
+29                                                                        
+30                                                                        
+31                                                                        
+32                                                                        
+33                                                                        
+34                                                                        
+35                                                                        
+36                                                                        
+37                                                                        
+38                                                                        
+39                                                                        
+40                                                                        
+41                                                                        
+42                                                                        
+43                                                                        
+44                                                                        
+45                                                                        
+46                                                                        
+47                                                                        
+48                                                                        
+49                                                                        
+50  3.00444398                                                            
+51  1.59808539  2.30074099                                                
+52  2.68614930  1.96938578  1.13659256                                    
+53  1.59669933  4.00810649  1.80481204  2.82228253                        
+54  1.99870723  1.74407178  0.62196725  0.73172225  2.42637002            
+55  1.42822007  1.58228601  1.17527994  1.74978327  2.53953091  1.04360764
+56  1.19536002  2.34739770  0.40762371  1.50450286  1.66167580  0.87293092
+57  0.31844943  2.91853200  1.30904515  2.42002132  1.39669415  1.75717403
+58  1.64492015  3.43232553  1.14132485  2.06723258  0.77504991  1.75190994
+59  0.77156183  3.75281511  2.04847275  3.18462006  1.20143243  2.56710319
+60  1.79834939  1.41755684  0.91852374  1.21017007  2.59364047  0.54502557
+            55          56          57          58          59
+2                                                             
+3                                                             
+4                                                             
+5                                                             
+6                                                             
+7                                                             
+8                                                             
+9                                                             
+10                                                            
+11                                                            
+12                                                            
+13                                                            
+14                                                            
+15                                                            
+16                                                            
+17                                                            
+18                                                            
+19                                                            
+20                                                            
+21                                                            
+22                                                            
+23                                                            
+24                                                            
+25                                                            
+26                                                            
+27                                                            
+28                                                            
+29                                                            
+30                                                            
+31                                                            
+32                                                            
+33                                                            
+34                                                            
+35                                                            
+36                                                            
+37                                                            
+38                                                            
+39                                                            
+40                                                            
+41                                                            
+42                                                            
+43                                                            
+44                                                            
+45                                                            
+46                                                            
+47                                                            
+48                                                            
+49                                                            
+50                                                            
+51                                                            
+52                                                            
+53                                                            
+54                                                            
+55                                                            
+56  0.97866139                                                
+57  1.33948162  0.91641451                                    
+58  2.11065182  1.13837256  1.34754588                        
+59  2.17055533  1.69784586  0.84907241  1.61216609            
+60  0.55057114  0.93198427  1.62652328  2.02385719  2.47471327</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>hc <span class="ot">&lt;-</span> <span class="fu">hclust</span>(<span class="fu">dist</span>(x))</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>hc</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+hclust(d = dist(x))
+
+Cluster method   : complete 
+Distance         : euclidean 
+Number of objects: 60 </code></pre>
+</div>
+</div>
+<p>The print out above is not very useful (unlike that from kmeans) but there is a useful <code>plot()</code> method.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(hc)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="class07_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(hc)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">h=</span><span class="dv">10</span>, <span class="at">col=</span><span class="st">"red"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="class07_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>To gte my main result (my cluster membership vector) I need to “cut” my tree using the function <code>cutree()</code></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>grps <span class="ot">&lt;-</span> <span class="fu">cutree</span>(hc, <span class="at">h=</span><span class="dv">10</span>)</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>grps</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2
+[39] 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(x, <span class="at">col =</span> grps)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="class07_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="principal-component-analysis-pca" class="level1">
+<h1>Principal Component Analysis (PCA)</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>url <span class="ot">&lt;-</span> <span class="st">"https://tinyurl.com/UK-foods"</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(url)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<blockquote class="blockquote">
+<p>Q1.</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(x)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 17  5</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(x,<span class="dv">6</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>               X England Wales Scotland N.Ireland
+1         Cheese     105   103      103        66
+2  Carcass_meat      245   227      242       267
+3    Other_meat      685   803      750       586
+4           Fish     147   160      122        93
+5 Fats_and_oils      193   235      184       209
+6         Sugars     156   175      147       139</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="do">##rownames(x) &lt;- x[,1]</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="do">##x &lt;- x[,-1]</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="do">##head(x)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<blockquote class="blockquote">
+<p>Q2. I prefer the second option because if I run the above code again, it will delete the name to the next column.</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(url, <span class="at">row.names=</span><span class="dv">1</span>)</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(x)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>               England Wales Scotland N.Ireland
+Cheese             105   103      103        66
+Carcass_meat       245   227      242       267
+Other_meat         685   803      750       586
+Fish               147   160      122        93
+Fats_and_oils      193   235      184       209
+Sugars             156   175      147       139</code></pre>
+</div>
+</div>
+<blockquote class="blockquote">
+<p>Q3. Change beside=T to beside=F.</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">barplot</span>(<span class="fu">as.matrix</span>(x), <span class="at">beside=</span>F, <span class="at">col=</span><span class="fu">rainbow</span>(<span class="fu">nrow</span>(x)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="class07_files/figure-html/unnamed-chunk-22-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">barplot</span>(<span class="fu">as.matrix</span>(x), <span class="at">beside=</span>T, <span class="at">col=</span><span class="fu">rainbow</span>(<span class="fu">nrow</span>(x)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="class07_files/figure-html/unnamed-chunk-23-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>The so-called “pairs” plot can be useful for small datasets:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co">#rainbow(nrow(x))</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="fu">pairs</span>(x, <span class="at">col=</span><span class="fu">rainbow</span>(<span class="fu">nrow</span>(x)),<span class="at">pch=</span><span class="dv">16</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="class07_files/figure-html/unnamed-chunk-24-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<blockquote class="blockquote">
+<p>Q5. The graph shows duplicate information, for example the plot next to the England box has England on the x axis and Wales on the y. While the plot directly below the England box has Wales on the x axis and England on the y. As a result, the two plots are the same, just flipped cause of the flipped axes.</p>
+</blockquote>
+<blockquote class="blockquote">
+<p>Q6. Ireland seems to be to have more similar graphs across. But we can use PCA to clarify all the differences.</p>
+</blockquote>
+<p>The pairs plot is useful for small datasets but it can be lots of work to interpret and gets untractable for larger datasets.</p>
+<p>So PCA to the rescue…</p>
+<p>The main function to do PCA is base R is called <code>prcomp()</code>.This function wants the trasnpose of our data in this case.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>pca <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(<span class="fu">t</span>(x))</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(pca)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Importance of components:
+                            PC1      PC2      PC3       PC4
+Standard deviation     324.1502 212.7478 73.87622 2.921e-14
+Proportion of Variance   0.6744   0.2905  0.03503 0.000e+00
+Cumulative Proportion    0.6744   0.9650  1.00000 1.000e+00</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">attributes</span>(pca)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$names
+[1] "sdev"     "rotation" "center"   "scale"    "x"       
+
+$class
+[1] "prcomp"</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>pca<span class="sc">$</span>x</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                 PC1         PC2        PC3           PC4
+England   -144.99315   -2.532999 105.768945 -9.152022e-15
+Wales     -240.52915 -224.646925 -56.475555  5.560040e-13
+Scotland   -91.86934  286.081786 -44.415495 -6.638419e-13
+N.Ireland  477.39164  -58.901862  -4.877895  1.329771e-13</code></pre>
+</div>
+</div>
+<p>a major PCA result viz is called a “PCA plot” (a.k.a. a score plot, biplot, PC1 vs PC2 plot, ordination plot)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>mycols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"orange"</span>, <span class="st">"red"</span>, <span class="st">"blue"</span>, <span class="st">"darkgreen"</span>)</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(pca<span class="sc">$</span>x[,<span class="dv">1</span>], pca<span class="sc">$</span>x[,<span class="dv">2</span>], <span class="at">col=</span>mycols, <span class="at">pch=</span><span class="dv">16</span>,</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab=</span><span class="st">"PC1"</span>, <span class="at">ylab=</span><span class="st">"PC2"</span>)</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">h=</span><span class="dv">0</span>, <span class="at">col=</span><span class="st">"gray"</span>)</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v=</span><span class="dv">0</span>, <span class="at">col=</span><span class="st">"gray"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="class07_files/figure-html/unnamed-chunk-28-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Another important output from PCA is called the “loadings” vector or the “rotation” component - this tells us how much the original variables (the foods in this case) contribute to the new PCs.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>pca<span class="sc">$</span>rotation</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                             PC1          PC2         PC3          PC4
+Cheese              -0.056955380  0.016012850  0.02394295 -0.409382587
+Carcass_meat         0.047927628  0.013915823  0.06367111  0.729481922
+Other_meat          -0.258916658 -0.015331138 -0.55384854  0.331001134
+Fish                -0.084414983 -0.050754947  0.03906481  0.022375878
+Fats_and_oils       -0.005193623 -0.095388656 -0.12522257  0.034512161
+Sugars              -0.037620983 -0.043021699 -0.03605745  0.024943337
+Fresh_potatoes       0.401402060 -0.715017078 -0.20668248  0.021396007
+Fresh_Veg           -0.151849942 -0.144900268  0.21382237  0.001606882
+Other_Veg           -0.243593729 -0.225450923 -0.05332841  0.031153231
+Processed_potatoes  -0.026886233  0.042850761 -0.07364902 -0.017379680
+Processed_Veg       -0.036488269 -0.045451802  0.05289191  0.021250980
+Fresh_fruit         -0.632640898 -0.177740743  0.40012865  0.227657348
+Cereals             -0.047702858 -0.212599678 -0.35884921  0.100043319
+Beverages           -0.026187756 -0.030560542 -0.04135860 -0.018382072
+Soft_drinks          0.232244140  0.555124311 -0.16942648  0.222319484
+Alcoholic_drinks    -0.463968168  0.113536523 -0.49858320 -0.273126013
+Confectionery       -0.029650201  0.005949921 -0.05232164  0.001890737</code></pre>
+</div>
+</div>
+<p>PCA looks to be super useful method for gaining some insight into high dimensional data that is difficult to examine in other ways.</p>
+</section>
+<section id="pca-of-rnaseq-data" class="level1">
+<h1>PCA of RNASeq Data</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>url2 <span class="ot">&lt;-</span> <span class="st">"https://tinyurl.com/expression-CSV"</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>rna.data <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(url2, <span class="at">row.names=</span><span class="dv">1</span>)</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(rna.data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       wt1 wt2  wt3  wt4 wt5 ko1 ko2 ko3 ko4 ko5
+gene1  439 458  408  429 420  90  88  86  90  93
+gene2  219 200  204  210 187 427 423 434 433 426
+gene3 1006 989 1030 1017 973 252 237 238 226 210
+gene4  783 792  829  856 760 849 856 835 885 894
+gene5  181 249  204  244 225 277 305 272 270 279
+gene6  460 502  491  491 493 612 594 577 618 638</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Again we have to transpose our data</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>pca <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(<span class="fu">t</span>(rna.data), <span class="at">scale=</span><span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(pca)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Importance of components:
+                          PC1    PC2     PC3     PC4     PC5     PC6     PC7
+Standard deviation     9.6237 1.5198 1.05787 1.05203 0.88062 0.82545 0.80111
+Proportion of Variance 0.9262 0.0231 0.01119 0.01107 0.00775 0.00681 0.00642
+Cumulative Proportion  0.9262 0.9493 0.96045 0.97152 0.97928 0.98609 0.99251
+                           PC8     PC9      PC10
+Standard deviation     0.62065 0.60342 3.345e-15
+Proportion of Variance 0.00385 0.00364 0.000e+00
+Cumulative Proportion  0.99636 1.00000 1.000e+00</code></pre>
+</div>
+</div>
+<blockquote class="blockquote">
+<p>Q10. How many genes in the dataset?</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(rna.data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 100</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="fu">attributes</span>(pca)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$names
+[1] "sdev"     "rotation" "center"   "scale"    "x"       
+
+$class
+[1] "prcomp"</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>pca<span class="sc">$</span>x</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          PC1        PC2        PC3        PC4        PC5        PC6
+wt1 -9.697374  1.5233313 -0.2753567  0.7322391 -0.6749398  1.1823860
+wt2 -9.138950  0.3748504  1.0867958 -1.9461655  0.7571209 -0.4369228
+wt3 -9.054263 -0.9855163  0.4152966  1.4166028  0.5835918  0.6937236
+wt4 -8.731483 -0.7468371  0.5875748  0.2268129 -1.5404775 -1.2723618
+wt5 -9.006312 -0.2945307 -1.8498101 -0.4303812  0.8666124 -0.2496025
+ko1  8.846999  2.2345475 -0.1462750 -1.1544333 -0.6947862  0.7128021
+ko2  9.213885 -3.2607503  0.2287292 -0.7658122 -0.4922849  0.9170241
+ko3  9.458412 -0.2636283 -1.5778183  0.2433549  0.3654124 -0.5837724
+ko4  8.883412  0.6339701  1.5205064  0.7760158  1.2158376 -0.1446094
+ko5  9.225673  0.7845635  0.0103574  0.9017667 -0.3860869 -0.8186668
+            PC7         PC8         PC9         PC10
+wt1 -0.24446614  1.03519396  0.07010231 3.388516e-15
+wt2 -0.03275370  0.26622249  0.72780448 2.996563e-15
+wt3 -0.03578383 -1.05851494  0.52979799 3.329630e-15
+wt4 -0.52795595 -0.20995085 -0.50325679 3.317526e-15
+wt5  0.83227047 -0.05891489 -0.81258430 2.712504e-15
+ko1 -0.07864392 -0.94652648 -0.24613776 2.768138e-15
+ko2  0.30945771  0.33231138 -0.08786782 3.317091e-15
+ko3 -1.43723425  0.14495188  0.56617746 3.299214e-15
+ko4 -0.35073859  0.30381920 -0.87353886 3.000948e-15
+ko5  1.56584821  0.19140827  0.62950330 2.785473e-15</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(pca<span class="sc">$</span>x)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          PC1        PC2        PC3        PC4        PC5        PC6
+wt1 -9.697374  1.5233313 -0.2753567  0.7322391 -0.6749398  1.1823860
+wt2 -9.138950  0.3748504  1.0867958 -1.9461655  0.7571209 -0.4369228
+wt3 -9.054263 -0.9855163  0.4152966  1.4166028  0.5835918  0.6937236
+wt4 -8.731483 -0.7468371  0.5875748  0.2268129 -1.5404775 -1.2723618
+wt5 -9.006312 -0.2945307 -1.8498101 -0.4303812  0.8666124 -0.2496025
+ko1  8.846999  2.2345475 -0.1462750 -1.1544333 -0.6947862  0.7128021
+            PC7         PC8         PC9         PC10
+wt1 -0.24446614  1.03519396  0.07010231 3.388516e-15
+wt2 -0.03275370  0.26622249  0.72780448 2.996563e-15
+wt3 -0.03578383 -1.05851494  0.52979799 3.329630e-15
+wt4 -0.52795595 -0.20995085 -0.50325679 3.317526e-15
+wt5  0.83227047 -0.05891489 -0.81258430 2.712504e-15
+ko1 -0.07864392 -0.94652648 -0.24613776 2.768138e-15</code></pre>
+</div>
+</div>
+<p>I will make a main result figure using ggplot:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(pca<span class="sc">$</span>x)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(res)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          PC1        PC2        PC3        PC4        PC5        PC6
+wt1 -9.697374  1.5233313 -0.2753567  0.7322391 -0.6749398  1.1823860
+wt2 -9.138950  0.3748504  1.0867958 -1.9461655  0.7571209 -0.4369228
+wt3 -9.054263 -0.9855163  0.4152966  1.4166028  0.5835918  0.6937236
+wt4 -8.731483 -0.7468371  0.5875748  0.2268129 -1.5404775 -1.2723618
+wt5 -9.006312 -0.2945307 -1.8498101 -0.4303812  0.8666124 -0.2496025
+ko1  8.846999  2.2345475 -0.1462750 -1.1544333 -0.6947862  0.7128021
+            PC7         PC8         PC9         PC10
+wt1 -0.24446614  1.03519396  0.07010231 3.388516e-15
+wt2 -0.03275370  0.26622249  0.72780448 2.996563e-15
+wt3 -0.03578383 -1.05851494  0.52979799 3.329630e-15
+wt4 -0.52795595 -0.20995085 -0.50325679 3.317526e-15
+wt5  0.83227047 -0.05891489 -0.81258430 2.712504e-15
+ko1 -0.07864392 -0.94652648 -0.24613776 2.768138e-15</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(res) <span class="sc">+</span></span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">aes</span>(PC1, PC2) <span class="sc">+</span></span>
+<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="class07_files/figure-html/unnamed-chunk-40-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>mycols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fu">rep</span>(<span class="st">"blue"</span>, <span class="dv">5</span>), <span class="fu">rep</span>(<span class="st">"red"</span>, <span class="dv">5</span>))</span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>mycols</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "blue" "blue" "blue" "blue" "blue" "red"  "red"  "red"  "red"  "red" </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(res) <span class="sc">+</span> </span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">aes</span>(<span class="at">x=</span>PC1, <span class="at">y=</span>PC2, <span class="at">label=</span><span class="fu">row.names</span>(res)) <span class="sc">+</span></span>
+<span id="cb65-3"><a href="#cb65-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">col=</span>mycols) <span class="sc">+</span></span>
+<span id="cb65-4"><a href="#cb65-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_label</span>(<span class="at">col=</span>mycols)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="class07_files/figure-html/unnamed-chunk-42-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(rna.data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "wt1" "wt2" "wt3" "wt4" "wt5" "ko1" "ko2" "ko3" "ko4" "ko5"</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="fu">kmeans</span>(pca<span class="sc">$</span>x[,<span class="dv">1</span>], <span class="at">centers =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>K-means clustering with 2 clusters of sizes 5, 5
+
+Cluster means:
+       [,1]
+1 -9.125676
+2  9.125676
+
+Clustering vector:
+wt1 wt2 wt3 wt4 wt5 ko1 ko2 ko3 ko4 ko5 
+  1   1   1   1   1   2   2   2   2   2 
+
+Within cluster sum of squares by cluster:
+[1] 0.5017505 0.2648467
+ (between_SS / total_SS =  99.9 %)
+
+Available components:
+
+[1] "cluster"      "centers"      "totss"        "withinss"     "tot.withinss"
+[6] "betweenss"    "size"         "iter"         "ifault"      </code></pre>
+</div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
