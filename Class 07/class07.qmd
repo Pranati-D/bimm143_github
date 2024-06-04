@@ -1,7 +1,7 @@
 ---
 title: "Class 07: machine Learning 1"
 author: Pranati
-format: pdf
+format: gfm
 ---
 
 Today we will start out multi-part exploration of some key machine learning methods. We will begin with clustering - finding groupings in data, and then dimensionallity reduction.
