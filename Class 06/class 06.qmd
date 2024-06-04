@@ -1,7 +1,7 @@
 ---
 title: "Class 6: R Functions"
 author: "Pranati (A16327318)"
-format: pdf
+format: gfm
 ---
 
 Functions are how we get work done in R. We call functions to do everything from reading data to doing analysis and outputting plots and results.
